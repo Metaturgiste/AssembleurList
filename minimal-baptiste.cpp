@@ -22,6 +22,25 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
         return true;
 }
 
+int list(int n, int size, ZydisDecoder *decoder, unsigned char* instr)
+{
+	printf("to save the day\n");
+	for(unsigned int i=0; i<256; ++i)
+	{
+		instr[n-1] = (unsigned char) i;
+		if (n>1) list(n-1, size, decoder, instr); // La récurence
+		else {
+			if (isInstructionValid(instr, size, decoder))
+				printf("Valid ");
+			for(int j=0; j<size; j++){
+				printf("%u ", (unsigned int)instr[j]);
+			}
+			printf("\n");
+		}
+	}
+	printf("rejoice\n");
+	return 0;
+} 
 
 int main(int argc, char* argv[])
 {
@@ -38,7 +57,7 @@ int main(int argc, char* argv[])
     }
     //if (!ZYAN_SUCCESS(ZydisDecoderEnableMode(&decoder, ZYDIS_DECODER_MODE_MINIMAL, zydisMinimalMode)))
 
-
+	
     /* Petit code pour détecter les préfixes, pour plus tard
      *
        vector<unsigned char> prefixes[5] = {{0xF0}, {0xF2, 0xF3}, {0x2E, 0x36, 0x3E, 0x26, 0x64, 0x65}, {0x66}, {0x67}};
@@ -60,6 +79,17 @@ int main(int argc, char* argv[])
         cout << "Error: give the length of the word to enumerate (number of bytes)" << endl;
         exit(1);
     }
+
+    if (argc == 2)
+    {
+	printf("i am here\n");
+        int size = atoi(argv[1]);
+
+	unsigned char* instr = (unsigned char*) malloc(size*sizeof(unsigned char));
+	list(size, size, &decoder, instr);
+	free(instr);
+    }
+
 
     /* Exemple de comment utiliser les arguments. Ici on aura besoin par exemple de la fonction C atoi pour obtenir l'entier
     if (argc > 2)
