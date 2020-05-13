@@ -17,17 +17,17 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
     ZyanStatus status = ZydisDecoderDecodeBuffer(decoder, bytes, size, &instruction);
 
     if (ZYAN_SUCCESS(status))
-        return false;
-    else
         return true;
+    else
+        return false;
 }
 
 int list(int n, int size, ZydisDecoder *decoder, unsigned char* instr)
 {
 	printf("to save the day\n");
-	for(unsigned int i=0; i<256; ++i)
+	for(unsigned char i=0; i<256; ++i)
 	{
-		instr[n-1] = (unsigned char) i;
+		instr[n-1] = i;
 		if (n>1) list(n-1, size, decoder, instr); // La récurence
 		else {
 			if (isInstructionValid(instr, size, decoder))
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         int size = atoi(argv[1]);
 
 	unsigned char* instr = (unsigned char*) malloc(size*sizeof(unsigned char));
-	list(size, size, &decoder, instr);
+	list(size, 15, &decoder, instr);
 	free(instr);
     }
 
