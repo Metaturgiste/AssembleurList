@@ -24,21 +24,24 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
 
 int list(int n, int size, ZydisDecoder *decoder, unsigned char* instr)
 {
-	printf("to save the day\n");
-	for(unsigned char i=0; i<256; ++i)
+	for(unsigned int i=0; i<256; ++i)
 	{
-		instr[n-1] = i;
-		if (n>1) list(n-1, size, decoder, instr); // La récurence
+		instr[size-n] = (unsigned char) i;
+		if (n>1 && isInstructionValid(instr, 15, decoder)) {
+			list(n-1, size, decoder, instr); // La récurence
+		}
 		else {
 			if (isInstructionValid(instr, size, decoder))
 				printf("Valid ");
+			else if (isInstructionValid(instr, 15, decoder))
+				printf("Too short ");
+			else printf("Hopeless ");
 			for(int j=0; j<size; j++){
-				printf("%u ", (unsigned int)instr[j]);
+				printf("%X ", (unsigned int)instr[j]);
 			}
 			printf("\n");
 		}
 	}
-	printf("rejoice\n");
 	return 0;
 } 
 
@@ -86,7 +89,7 @@ int main(int argc, char* argv[])
         int size = atoi(argv[1]);
 
 	unsigned char* instr = (unsigned char*) malloc(size*sizeof(unsigned char));
-	list(size, 15, &decoder, instr);
+	list(size, size, &decoder, instr);
 	free(instr);
     }
 
