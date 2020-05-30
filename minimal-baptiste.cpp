@@ -5,12 +5,15 @@
 //#include <Zydis/Zydis.h>
 //#include "Dossier-git-zydis/include/Zydis/Zydis.h"
 #include "../zydis/include/Zydis/Zydis.h"
+#include "../zydis/include/Zydis/Utils.h"
 
 using namespace std;
 
 // Éventuellement tu pourras tester en déclarant la variable instruction en dehors,
 // et en la donnant en argument (par référence ou pointeur). Pour éviter d'en créer une à
 // chaque fois : peut-être que ça ira plus vite (mais je suis dubitatif).
+
+// #CodeMort
 inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *decoder)
 {
     ZydisDecodedInstruction instruction;
@@ -21,25 +24,52 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
     else
         return false;
 }
+/*
+inline bool isInstructionWithImmediate(unsigned char* bytes, int size, ZydisDecoder *decoder)
+{
+    ZydisDecodedInstruction ins;
+    ZydisInstructionSegments* segments;
+    ZyanStatus statusVal = ZydisDecoderDecodeBuffer(decoder, bytes, size, &ins);
+    const ZydisDecodedInstruction instruction = (ZydisDecodedInstruction) ins;
+    ZyanStatus statusSeg = ZydisGetInstructionSegments(instruction, segments);
 
-int list(int n, int size, ZydisDecoder *decoder, unsigned char* instr)
+    if (ZYAN_SUCCESS(statusVal))
+        return true;
+    else
+        return false;
+}
+*/
+int instrPrint(unsigned char* instr, int n)
+{
+	for(int j=0; j<n; j++){
+		printf("%X ", (unsigned int)instr[j]);
+	}
+	printf("\n");
+	return 0;
+}
+
+int list(int size, ZydisDecoder *decoder, unsigned char* instr, int n)
 {
 	for(unsigned int i=0; i<256; ++i)
 	{
-		instr[size-n] = (unsigned char) i;
-		if (n>1 && isInstructionValid(instr, 15, decoder)) {
-			list(n-1, size, decoder, instr); // La récurence
+		instr[n-1] = (unsigned char) i; // On agrandi l'instruction
+
+		if (isInstructionValid(instr, n, decoder)) {
+			printf("Valid ");
+			instrPrint(instr, n);
+		}
+		else if (isInstructionValid(instr, 15, decoder)) {
+			if(n<size) {
+				list(size, decoder, instr, n+1); // La récurence
+			}
+			else {
+				printf("Too short ");
+				instrPrint(instr, n);
+			}
 		}
 		else {
-			if (isInstructionValid(instr, size, decoder))
-				printf("Valid ");
-			else if (isInstructionValid(instr, 15, decoder))
-				printf("Too short ");
-			else printf("Hopeless ");
-			for(int j=0; j<size; j++){
-				printf("%X ", (unsigned int)instr[j]);
-			}
-			printf("\n");
+			printf("Hopeless ");
+			instrPrint(instr, n);
 		}
 	}
 	return 0;
@@ -83,13 +113,12 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    if (argc == 2)
+    if (argc == 2)            
     {
-	printf("i am here\n");
         int size = atoi(argv[1]);
 
 	unsigned char* instr = (unsigned char*) malloc(size*sizeof(unsigned char));
-	list(size, size, &decoder, instr);
+	list(size, &decoder, instr, 1);
 	free(instr);
     }
 
