@@ -13,7 +13,6 @@ using namespace std;
 // et en la donnant en argument (par référence ou pointeur). Pour éviter d'en créer une à
 // chaque fois : peut-être que ça ira plus vite (mais je suis dubitatif).
 
-// #CodeMort
 inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *decoder)
 {
     ZydisDecodedInstruction instruction;
@@ -24,21 +23,20 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
     else
         return false;
 }
-/*
 inline bool isInstructionWithImmediate(unsigned char* bytes, int size, ZydisDecoder *decoder)
 {
-    ZydisDecodedInstruction ins;
-    ZydisInstructionSegments* segments;
-    ZyanStatus statusVal = ZydisDecoderDecodeBuffer(decoder, bytes, size, &ins);
-    const ZydisDecodedInstruction instruction = (ZydisDecodedInstruction) ins;
-    ZyanStatus statusSeg = ZydisGetInstructionSegments(instruction, segments);
+    ZydisDecodedInstruction instruction;
+    ZydisInstructionSegments segments;
+    ZyanStatus statusVal = ZydisDecoderDecodeBuffer(decoder, bytes, size, &instruction);
+    ZyanStatus statusSeg = ZydisGetInstructionSegments(&instruction, &segments);
 
-    if (ZYAN_SUCCESS(statusVal))
-        return true;
+    if (ZYDIS_ATTRIB_HAS_MODRM) 
+	return true;
+    // SIB IMM DISP
     else
         return false;
 }
-*/
+
 int instrPrint(unsigned char* instr, int n)
 {
 	for(int j=0; j<n; j++){
@@ -59,7 +57,12 @@ int list(int size, ZydisDecoder *decoder, unsigned char* instr, int n)
 			instrPrint(instr, n);
 		}
 		else if (isInstructionValid(instr, 15, decoder)) {
-			if(n<size) {
+			if (isInstructionWithImmediate(instr, n, decoder) && n>1) {
+				printf("Modrm ");
+				instrPrint(instr, n);
+				return 0;
+			}
+			else if(n<size) {
 				list(size, decoder, instr, n+1); // La récurence
 			}
 			else {
