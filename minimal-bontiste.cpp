@@ -29,8 +29,7 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
     ZyanStatus status = ZydisDecoderDecodeBuffer(decoder, bytes, size, &instruction);
     
     if (ZYAN_SUCCESS(status)) {
-        if (not isMemoryMessed(instruction))
-            return true;
+        return true;
     }
     else
         return false;
@@ -39,7 +38,7 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
 int instrPrint(unsigned char* instr, int n)
 {
 	for(int j=0; j<n; j++){
-		printf("%X ", (unsigned int)instr[j]);
+		printf("%02X ", (unsigned int)instr[j]);
 	}
 	printf("\n");
 	return 0;
@@ -61,7 +60,8 @@ inline bool isInstructionWithImmediate(unsigned char* bytes, int n, ZydisDecoder
             ZyanStatus status = ZydisDecoderDecodeBuffer(decoder, bytes, 15, &instruction);
             ZyanU8 len = instruction.length;
             ZyanU8 pos = segments.segments[i].offset;
-            if (not isMemoryMessed(instruction)) instrPrint(bytes, len);
+            if (not isMemoryMessed(instruction)) 
+                instrPrint(bytes, len);
             return true;
         }
     }
@@ -77,7 +77,10 @@ int list(int size, ZydisDecoder *decoder, unsigned char* instr, int n)
             return 0;
         }
         else if (isInstructionValid(instr, n, decoder)) {
-            instrPrint(instr, n);
+            ZydisDecodedInstruction instruction;
+            ZyanStatus status = ZydisDecoderDecodeBuffer(decoder, instr, n, &instruction);
+            if (not isMemoryMessed(instruction))
+                instrPrint(instr, n);
         }
         else if (isInstructionValid(instr, 15, decoder)) {
             if(n<size) {
