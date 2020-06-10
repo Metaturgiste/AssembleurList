@@ -23,27 +23,37 @@ inline bool isInstructionValid(unsigned char* bytes, int size, ZydisDecoder *dec
     else
         return false;
 }
-inline bool isInstructionWithImmediate(unsigned char* bytes, int size, ZydisDecoder *decoder)
-{
-    ZydisDecodedInstruction instruction;
-    ZydisInstructionSegments segments;
-    ZyanStatus statusVal = ZydisDecoderDecodeBuffer(decoder, bytes, size, &instruction);
-    ZyanStatus statusSeg = ZydisGetInstructionSegments(&instruction, &segments);
 
-    if (ZYDIS_ATTRIB_HAS_MODRM) 
-	return true;
-    // SIB IMM DISP
-    else
-        return false;
-}
-
-int instrPrint(unsigned char* instr, int n)
+int instrPrint(unsigned char* instr, int n, int length)
 {
 	for(int j=0; j<n; j++){
 		printf("%X ", (unsigned int)instr[j]);
 	}
-	printf("\n");
+	printf(": %d\n", length);
 	return 0;
+}
+
+inline bool isInstructionWithImmediate(unsigned char* bytes, int n, ZydisDecoder *decoder)
+{
+    ZydisDecodedInstruction instruction;
+    ZydisInstructionSegments segments;
+    ZyanStatus statusVal = ZydisDecoderDecodeBuffer(decoder, bytes, n, &instruction);
+    ZyanStatus statusSeg = ZydisGetInstructionSegments(&instruction, &segments);
+
+    for (ZyanU8 i = 0; i < segments.count; i++)
+    {
+        ZyanU8 type = segments.segments[i].type;
+        if (type != ZYDIS_INSTR_SEGMENT_OPCODE and type != ZYDIS_INSTR_SEGMENT_MODRM and type != ZYDIS_INSTR_SEGMENT_SIB)
+        {
+            if (i == 0) return true;
+            ZyanStatus status = ZydisDecoderDecodeBuffer(decoder, bytes, 15, &instruction);
+            ZyanU8 len = instruction.length;
+            ZyanU8 pos = segments.segments[i].offset;
+            instrPrint(bytes, pos, len);
+            return true;
+        }
+    }
+    return false  ;  
 }
 
 int list(int size, ZydisDecoder *decoder, unsigned char* instr, int n)
@@ -51,28 +61,16 @@ int list(int size, ZydisDecoder *decoder, unsigned char* instr, int n)
 	for(unsigned int i=0; i<256; ++i)
 	{
 		instr[n-1] = (unsigned char) i; // On agrandi l'instruction
-
-		if (isInstructionValid(instr, n, decoder)) {
-			printf("Valid ");
-			instrPrint(instr, n);
+		if (n>1 and isInstructionWithImmediate(instr, n-1, decoder)) {
+			return 0;
+		}
+		else if (isInstructionValid(instr, n, decoder)) {
+			instrPrint(instr, n, n);
 		}
 		else if (isInstructionValid(instr, 15, decoder)) {
-			if (isInstructionWithImmediate(instr, n, decoder) && n>1) {
-				printf("Modrm ");
-				instrPrint(instr, n);
-				return 0;
-			}
-			else if(n<size) {
+			if(n<size) {
 				list(size, decoder, instr, n+1); // La récurence
 			}
-			else {
-				printf("Too short ");
-				instrPrint(instr, n);
-			}
-		}
-		else {
-			printf("Hopeless ");
-			instrPrint(instr, n);
 		}
 	}
 	return 0;
