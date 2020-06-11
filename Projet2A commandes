@@ -1,0 +1,48 @@
+All commands : (A titre indicatif)
+
+Génération de la liste des instructions
+
+$./ZydisInfo -32 04 05 07 54
+
+$g++ minimal-baptiste.cpp -I /home/metaturgiste/Desktop/zydis/dependencies/zycore/include/ -I /home/metaturgiste/Desktop/zydis/include/ -I /home/metaturgiste/Desktop/zydis/build/ -I /home/metaturgiste/Desktop/zydis/build/zycore -L /home/metaturgiste/Desktop/zydis/build/ -lZydis -o minimal
+
+$./minimal 300 > Success2_15
+
+$wc -l < Success2_15.txt
+1402759
+
+Génération de la liste des instruction qui ne touchent pas à la mémoire
+
+$g++ minimal-baptiste.cpp -I /home/metaturgiste/Desktop/zydis/dependencies/zycore/include/ -I /home/metaturgiste/Desktop/zydis/include/ -I /home/metaturgiste/Desktop/zydis/build/ -I /home/metaturgiste/Desktop/zydis/build/zycore -L /home/metaturgiste/Desktop/zydis/build/ -lZydis -o minimal
+
+$./minimol 300 > mol.txt;
+
+$wc -l < mol.txt
+902521
+
+
+Test de ces dernières
+
+$g++ execute-opcode.cpp -O2 -o execute-opcode
+
+On enlève ce que ./execute-opcode ne peut gérer
+
+rm exeable.txt; while read -r line; do timeout 0.00000000001 ./execute-opcode "$line" &> /dev/null; echo "$line" >> exeable.txt; done < mol.txt
+
+On génère la liste des instructions valables
+
+rm faillingInstr.txt; rm workingInstr.txt; while read -r line; do echo "$line" >> faillingInstr.txt; if ./execute-opcode "$line" &> /dev/null; then sed -i "$ d" faillingInstr.txt; echo "$line" >> workingInstr.txt; fi; done < mol.txt
+
+exeableSlot.txt est d'abord une copie de exeable.txt
+
+sed -i '/0F /d' exeableSlot.txt
+
+sed -i '/ [0-3]4 5[3-9]$/d' exeableSlot.txt
+sed -i '/ [0-3]C 5[3-9]$/d' exeableSlot.txt
+sed -i '/ [0-3]4 5[A-F]$/d' exeableSlot.txt
+sed -i '/ [0-3]C 5[A-F]$/d' exeableSlot.txt
+
+
+m faillingInstr.txt; rm workingInstr.txt; while read -r line; do echo "$line" >> faillingInstr.txt; echo "$line"; if ./execute-opcode "$line" &> /dev/null; then sed -i "$ d" faillingInstr.txt; echo "$line" >> workingInstr.txt; fi; done < exeableSlot.txt
+
+Et pouf workingInstr.txt doit théoriquement contenir une liste d'instruction qui marchent. 
